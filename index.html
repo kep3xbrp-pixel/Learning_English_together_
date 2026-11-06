@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 ENGLISH ADVENTURE - Learn & Play</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+            color: #f8fafc;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        h1, h2, h3, .font-heading {
+            font-family: 'Fredoka', cursive;
+        }
+        .card-glow {
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-glow:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 30px -10px rgba(99, 102, 241, 0.5);
+        }
+        .btn-bounce {
+            transition: transform 0.1s ease;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .btn-bounce:active {
+            transform: scale(0.95);
+        }
+        
+        /* Estilos Sopa de Letras */
+        .grid-wordsearch {
+            display: grid;
+            grid-template-columns: repeat(10, minmax(0, 1fr));
+            gap: 4px;
+            touch-action: none;
+        }
+        .ws-cell {
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            background-color: #334155;
+            color: #f8fafc;
+            cursor: pointer;
+            transition: background-color 0.15s ease;
+            touch-action: none;
+        }
+        .ws-cell.selecting {
+            background-color: #eab308 !important;
+            color: #0f172a !important;
+        }
+        .ws-cell.found {
+            background-color: #22c55e !important;
+            color: #ffffff !important;
+        }
+
+        /* Estilos Crucigrama */
+        .crossword-cell {
+            width: 32px;
+            height: 32px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .crossword-cell.black {
+            background-color: #0f172a;
+            border-radius: 4px;
+        }
+        .crossword-cell.white {
+            background-color: #334155;
+            border: 1px solid #475569;
+            border-radius: 4px;
+        }
+        .crossword-cell input {
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            font-weight: 800;
+            text-transform: uppercase;
+            background: transparent;
+            color: #ffffff;
+            font-size: 0.95rem;
+            outline: none;
+        }
+        .crossword-cell .num {
+            position: absolute;
+            top: 2px;
+            left: 3px;
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: #94a3b8;
+            pointer-events: none;
+        }
+        .crossword-cell.correct-cell {
+            background-color: #15803d !important;
+        }
+        .crossword-cell.wrong-cell {
+            background-color: #b91c1c !important;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- Header Principal / Ticket de Jugador -->
+    <header class="p-4 bg-slate-900/80 backdrop-blur border-b border-slate-700/50 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <span class="text-3xl">🎮</span>
+                <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-yellow-400 bg-clip-text text-transparent">
+                    ENGLISH ADVENTURE
+                </h1>
+            </div>
+
+            <!-- TICKET DE JUGADOR PERSONAL -->
+            <div id="player-ticket" class="hidden bg-slate-800 border-2 border-indigo-500/50 rounded-2xl p-3 px-5 flex items-center gap-4 shadow-lg">
+                <div id="ticket-avatar" class="text-3xl bg-slate-700 p-2 rounded-xl">🐼</div>
+                <div class="flex flex-col">
+                    <span id="ticket-name" class="font-bold text-lg text-yellow-300">Jugador</span>
+                    <div class="flex items-center gap-4 text-xs font-semibold text-slate-300">
+                        <span>⭐ PUNTUACIÓN ACUMULADA: <strong id="ticket-score" class="text-emerald-400 text-sm">0</strong></span>
+                        <span>🏆 JUEGOS GANADOS: <strong id="ticket-wins" class="text-indigo-400 text-sm">0</strong></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- PANTALLA 1: REGISTRO DE JUGADOR -->
+    <main id="screen-login" class="flex-grow flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-slate-800/90 border border-slate-700 rounded-3xl p-8 text-center shadow-2xl backdrop-blur">
+            <div class="text-6xl mb-4 animate-bounce">🚀</div>
+            <h2 class="text-3xl font-bold text-white mb-2">¡Let's play English!</h2>
+            <p class="text-slate-400 mb-6">Practica, juega y mejora tus habilidades en inglés.</p>
+            
+            <form id="login-form" class="space-y-4" onsubmit="event.preventDefault(); handleLogin();">
+                <div class="text-left">
+                    <label class="block text-xs font-bold text-slate-400 mb-1 ml-1 uppercase">Ingresa tu Nombre</label>
+                    <input type="text" id="player-name-input" maxlength="24" placeholder="Ej. Gabriel" 
+                           class="w-full bg-slate-900 border-2 border-slate-700 focus:border-indigo-500 rounded-xl px-4 py-3 text-white font-semibold outline-none transition">
+                    <p id="login-error" class="text-red-400 text-xs mt-1 hidden">Por favor ingresa un nombre válido (máx. 24 caracteres).</p>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-3.5 rounded-xl shadow-lg btn-bounce transition">
+                    Entrar al Menú 🎟️
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <!-- PANTALLA 2: MENÚ PRINCIPAL -->
+    <main id="screen-menu" class="hidden flex-grow max-w-6xl mx-auto w-full p-4 space-y-8">
+        <div class="text-center space-y-2">
+            <h2 class="text-3xl sm:text-4xl font-extrabold text-white">Categorías de Aprendizaje</h2>
+            <p class="text-slate-400">Selecciona un tema para poner a prueba tus conocimientos (Nivel Principiante A1)</p>
+        </div>
+
+        <!-- GRID DE CATEGORÍAS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 card-glow flex flex-col justify-between">
+                <div>
+                    <div class="text-4xl mb-3">👤</div>
+                    <h3 class="text-xl font-bold text-indigo-400 mb-1">1. Personal Pronouns</h3>
+                    <p class="text-slate-300 text-sm mb-4">Aprende los pronombres básicos: I, You, He, She, It, We, They.</p>
+                </div>
+                <button onclick="startCategory('pronouns')" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl btn-bounce">
+                    Jugar Actividades 🎯
+                </button>
+            </div>
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 card-glow flex flex-col justify-between">
+                <div>
+                    <div class="text-4xl mb-3">📦</div>
+                    <h3 class="text-xl font-bold text-purple-400 mb-1">2. Singular and Plural</h3>
+                    <p class="text-slate-300 text-sm mb-4">Reglas sencillas para transformar sustantivos de uno a varios.</p>
+                </div>
+                <button onclick="startCategory('plural')" class="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-2.5 rounded-xl btn-bounce">
+                    Jugar Actividades 🎯
+                </button>
+            </div>
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 card-glow flex flex-col justify-between">
+                <div>
+                    <div class="text-4xl mb-3">⚡</div>
+                    <h3 class="text-xl font-bold text-emerald-400 mb-1">3. Verb TO BE</h3>
+                    <p class="text-slate-300 text-sm mb-4">Uso de Am, Is y Are en oraciones simples del día a día.</p>
+                </div>
+                <button onclick="startCategory('tobe')" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 rounded-xl btn-bounce">
+                    Jugar Actividades 🎯
+                </button>
+            </div>
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 card-glow flex flex-col justify-between">
+                <div>
+                    <div class="text-4xl mb-3">🍎</div>
+                    <h3 class="text-xl font-bold text-yellow-400 mb-1">4. Articles A and AN</h3>
+                    <p class="text-slate-300 text-sm mb-4">Cuándo usar A o AN con palabras y objetos comunes.</p>
+                </div>
+                <button onclick="startCategory('articles')" class="w-full bg-yellow-600 hover:bg-yellow-500 text-white font-bold py-2.5 rounded-xl btn-bounce">
+                    Jugar Actividades 🎯
+                </button>
+            </div>
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 card-glow flex flex-col justify-between">
+                <div>
+                    <div class="text-4xl mb-3">🧩</div>
+                    <h3 class="text-xl font-bold text-blue-400 mb-1">5. Sentence Structure</h3>
+                    <p class="text-slate-300 text-sm mb-4">Orden correcto: Sujeto + Verbo + Complemento.</p>
+                </div>
+                <button onclick="startCategory('structure')" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl btn-bounce">
+                    Jugar Actividades 🎯
+                </button>
+            </div>
+            <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 card-glow flex flex-col justify-between">
+                <div>
+                    <div class="text-4xl mb-3">🚫</div>
+                    <h3 class="text-xl font-bold text-rose-400 mb-1">6. Negative Sentences</h3>
+                    <p class="text-slate-300 text-sm mb-4">Construye negaciones simples usando NOT, DON'T y DOESN'T.</p>
+                </div>
+                <button onclick="startCategory('negative')" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-2.5 rounded-xl btn-bounce">
+                    Jugar Actividades 🎯
+                </button>
+            </div>
+        </div>
+
+        <!-- JUEGOS ESPECIALES -->
+        <div class="pt-6 border-t border-slate-800">
+            <h3 class="text-2xl font-bold text-white mb-4 text-center">🌟 Juegos Especiales & Desafíos</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <button onclick="startWordSearch()" class="bg-gradient-to-br from-indigo-900 to-slate-800 border-2 border-indigo-500/30 p-6 rounded-2xl text-center card-glow flex flex-col items-center gap-2 btn-bounce">
+                    <span class="text-4xl">🔎</span>
+                    <span class="text-xl font-bold text-white">Sopa de Letras</span>
+                    <span class="text-xs text-slate-400">Encuentra 10 palabras ocultas</span>
+                </button>
+                <button onclick="startCrossword()" class="bg-gradient-to-br from-purple-900 to-slate-800 border-2 border-purple-500/30 p-6 rounded-2xl text-center card-glow flex flex-col items-center gap-2 btn-bounce">
+                    <span class="text-4xl">✏️</span>
+                    <span class="text-xl font-bold text-white">Crucigrama</span>
+                    <span class="text-xs text-slate-400">Resuelve las pistas completas</span>
+                </button>
+                <button onclick="startCategory('general')" class="bg-gradient-to-br from-amber-900 to-slate-800 border-2 border-amber-500/30 p-6 rounded-2xl text-center card-glow flex flex-col items-center gap-2 btn-bounce">
+                    <span class="text-4xl">🌟</span>
+                    <span class="text-xl font-bold text-white">Reto General</span>
+                    <span class="text-xs text-slate-400">Preguntas combinadas de todos los temas</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- PANTALLA 3: JUEGO / PREGUNTAS -->
+    <main id="screen-game" class="hidden flex-grow max-w-3xl mx-auto w-full p-4">
+        <div class="bg-slate-800/90 border border-slate-700 rounded-3xl p-6 shadow-2xl space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-4">
+                <button onclick="quitToMenu()" class="text-slate-400 hover:text-white flex items-center gap-2 font-semibold text-sm bg-slate-700/50 px-3 py-1.5 rounded-lg btn-bounce">
+                    <i class="fa-solid fa-arrow-left"></i> Menú
+                </button>
+                <span id="game-title" class="font-bold text-indigo-400">Categoría</span>
+                <span id="game-progress" class="text-sm font-semibold text-slate-400">1 / 10</span>
+            </div>
+
+            <div id="exercise-container"></div>
+            <div id="feedback-box" class="hidden p-4 rounded-xl text-center font-bold text-sm"></div>
+
+            <button id="btn-next" onclick="nextQuestion()" class="hidden w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-xl shadow-lg btn-bounce">
+                Siguiente Pregunta ➡️
+            </button>
+        </div>
+    </main>
+
+    <!-- PANTALLA 4: SOPA DE LETRAS -->
+    <main id="screen-wordsearch" class="hidden flex-grow max-w-4xl mx-auto w-full p-4 space-y-6">
+        <div class="bg-slate-800/90 border border-slate-700 rounded-3xl p-6 shadow-2xl space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-4">
+                <button onclick="quitToMenu()" class="text-slate-400 hover:text-white flex items-center gap-2 font-semibold text-sm bg-slate-700/50 px-3 py-1.5 rounded-lg btn-bounce">
+                    <i class="fa-solid fa-arrow-left"></i> Menú
+                </button>
+                <h3 id="ws-theme-title" class="font-bold text-yellow-400 text-lg">🔎 Sopa de Letras</h3>
+                <span id="ws-counter" class="text-sm text-slate-300 font-semibold">Palabras: 0 / 10</span>
+            </div>
+
+            <p class="text-xs text-slate-400 text-center">Haz clic o mantén presionado y arrastra para marcar las palabras.</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                <div class="md:col-span-2 bg-slate-900 p-4 rounded-2xl">
+                    <div id="ws-grid" class="grid-wordsearch"></div>
+                </div>
+                <div class="bg-slate-900 p-4 rounded-2xl">
+                    <h4 class="font-bold text-slate-300 mb-3 text-center border-b border-slate-800 pb-2">Palabras a buscar:</h4>
+                    <ul id="ws-words-list" class="grid grid-cols-2 gap-2 text-sm font-bold text-slate-400"></ul>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- PANTALLA 5: CRUCIGRAMA -->
+    <main id="screen-crossword" class="hidden flex-grow max-w-4xl mx-auto w-full p-4 space-y-6">
+        <div class="bg-slate-800/90 border border-slate-700 rounded-3xl p-6 shadow-2xl space-y-6">
+            <div class="flex items-center justify-between border-b border-slate-700 pb-4">
+                <button onclick="quitToMenu()" class="text-slate-400 hover:text-white flex items-center gap-2 font-semibold text-sm bg-slate-700/50 px-3 py-1.5 rounded-lg btn-bounce">
+                    <i class="fa-solid fa-arrow-left"></i> Menú
+                </button>
+                <h3 id="cw-theme-title" class="font-bold text-purple-400 text-lg">✏️ Crucigrama</h3>
+                <button onclick="checkCrossword()" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-4 py-2 rounded-xl btn-bounce">
+                    Comprobar respuestas ✔️
+                </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                <div class="bg-slate-900 p-4 rounded-2xl overflow-x-auto flex justify-center">
+                    <div id="cw-board" class="grid gap-1"></div>
+                </div>
+                <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                    <div class="bg-slate-900 p-4 rounded-2xl space-y-2">
+                        <h4 class="font-bold text-indigo-400 text-sm border-b border-slate-800 pb-1">Horizontales:</h4>
+                        <ul id="cw-across-clues" class="text-xs space-y-1 text-slate-300"></ul>
+                    </div>
+                    <div class="bg-slate-900 p-4 rounded-2xl space-y-2">
+                        <h4 class="font-bold text-purple-400 text-sm border-b border-slate-800 pb-1">Verticales:</h4>
+                        <ul id="cw-down-clues" class="text-xs space-y-1 text-slate-300"></ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- PANTALLA 6: FINALIZACIÓN -->
+    <main id="screen-complete" class="hidden flex-grow flex items-center justify-center p-4">
+        <div class="max-w-md w-full bg-slate-800/90 border border-slate-700 rounded-3xl p-8 text-center shadow-2xl backdrop-blur space-y-6">
+            <div class="text-7xl">🏆</div>
+            <h2 class="text-3xl font-bold text-white">¡Felicitaciones!</h2>
+            <p id="complete-challenge-name" class="text-indigo-400 font-bold text-lg">Desafío completado</p>
+            <div class="bg-slate-900/60 p-4 rounded-2xl text-slate-300 text-sm space-y-2">
+                <p>Puntos de esta partida: <strong id="complete-session-score" class="text-emerald-400 text-base">0</strong></p>
+                <p class="text-xs text-slate-400">🎟️ Tu Ticket Personal ha sido actualizado en tiempo real.</p>
+            </div>
+            <button onclick="showMenu()" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-3.5 rounded-xl shadow-lg btn-bounce">
+                Volver al Menú Principal 🏠
+            </button>
+        </div>
+    </main>
+
+    <footer class="p-4 text-center text-xs text-slate-500 border-t border-slate-800/50">
+        ENGLISH ADVENTURE &copy; 2026 - Plataforma Educativa Interactiva de Inglés
+    </footer>
+
+    <script>
+        const AVATARS = ['🐼', '🦊', '🦁', '🐨', '🐯', '🐸', '🦄', '🤖'];
+        
+        let currentPlayer = {
+            name: '',
+            avatar: '🐼',
+            categoryScores: {}, 
+            totalScore: 0,
+            gamesWon: 0
+        };
+
+        let currentSessionScore = 0;
+        let activeQuestions = [];
+        let currentQuestionIndex = 0;
+        let activeCategoryKey = '';
+        let completedThisSession = false;
+
+        const QUESTIONS_BANK = {
+            pronouns: [
+                { type: 'choice', question: '¿Cuál es el pronombre en inglés para "Ella"?', options: ['He', 'She', 'They', 'It'], answer: 'She', explain: '"She" significa Ella.' },
+                { type: 'choice', question: '¿Cómo se dice "Nosotros" en inglés?', options: ['They', 'We', 'You', 'I'], answer: 'We', explain: '"We" se usa para Nosotros.' },
+                { type: 'tf', sentence: '"They" se utiliza para decir "Ellos" o "Ellas".', answer: true, explain: '¡Correcto!' },
+                { type: 'tf', sentence: '"He" se utiliza para referirse a un objeto o animal.', answer: false, explain: 'Incorrecto. Usamos "It".' },
+                { type: 'fill', sentence: '___ am a student.', options: ['I', 'He', 'She'], answer: 'I', explain: 'Siempre "I am".' },
+                { type: 'fill', sentence: '___ is my best friend. (Él)', options: ['He', 'They', 'We'], answer: 'He', explain: '"He" es Él.' },
+                { type: 'order', words: ['She', 'likes', 'apples.'], answer: 'She likes apples.', explain: 'Sujeto + Verbo + Objeto.' },
+                { type: 'choice', question: '¿Qué pronombre reemplaza a "The dog"?', options: ['It', 'He', 'They', 'You'], answer: 'It', explain: 'Usamos "It" para animales.' },
+                { type: 'choice', question: '¿Qué pronombre reemplaza a "Tom and I"?', options: ['We', 'They', 'You', 'He'], answer: 'We', explain: 'Tom y yo es We.' },
+                { type: 'choice', question: '¿Qué pronombre reemplaza a "Mary and Anna"?', options: ['They', 'We', 'She', 'You'], answer: 'They', explain: 'Ellas -> They.' }
+            ],
+            plural: [
+                { type: 'choice', question: '¿Cuál es el plural de la palabra "cat"?', options: ['cats', 'cates', 'caties', 'catss'], answer: 'cats', explain: 'Agregamos "-s".' },
+                { type: 'choice', question: '¿Cuál es el plural de "book"?', options: ['books', 'bookes', 'bookies', 'book'], answer: 'books', explain: 'Agregamos "-s".' },
+                { type: 'choice', question: '¿Cuál es el plural de la palabra "desk"?', options: ['desks', 'deskes', 'deskies', 'desk'], answer: 'desks', explain: 'Agregamos "-s".' },
+                { type: 'tf', sentence: 'El plural de "dog" es "dogs".', answer: true, explain: '¡Correcto!' },
+                { type: 'tf', sentence: 'El plural de "box" es "boxs".', answer: false, explain: 'Incorrecto. Es "boxes".' },
+                { type: 'fill', sentence: 'One apple, two ___.', options: ['apples', 'apple', 'appless'], answer: 'apples', explain: 'Plural con "-s".' },
+                { type: 'fill', sentence: 'I have three ___. (car)', options: ['cars', 'cares', 'caries'], answer: 'cars', explain: 'Car -> cars.' },
+                { type: 'order', words: ['Two', 'dogs', 'run.'], answer: 'Two dogs run.', explain: 'Número + Plural + Verbo.' },
+                { type: 'choice', question: '¿Cuál es el plural de "bus"?', options: ['buses', 'buss', 'busies', 'busen'], answer: 'buses', explain: 'Bus -> buses.' },
+                { type: 'choice', question: '¿Cuál es el plural de "boy"?', options: ['boys', 'boyes', 'boies', 'boy'], answer: 'boys', explain: 'Boy -> boys.' }
+            ],
+            tobe: [
+                { type: 'choice', question: '¿Cuál es la forma correcta? "She ___ a teacher."', options: ['is', 'are', 'am', 'be'], answer: 'is', explain: 'She va con "is".' },
+                { type: 'choice', question: '¿Cuál es la forma correcta? "They ___ happy."', options: ['are', 'is', 'am', 'be'], answer: 'are', explain: 'They va con "are".' },
+                { type: 'tf', sentence: 'Se dice "I is happy".', answer: false, explain: 'Incorrecto. Es "I am happy".' },
+                { type: 'tf', sentence: 'Se dice "We are friends".', answer: true, explain: '¡Correcto!' },
+                { type: 'fill', sentence: 'I ___ ten years old.', options: ['am', 'is', 'are'], answer: 'am', explain: 'I am.' },
+                { type: 'fill', sentence: 'He ___ at school today.', options: ['is', 'are', 'am'], answer: 'is', explain: 'He is.' },
+                { type: 'order', words: ['You', 'are', 'very', 'kind.'], answer: 'You are very kind.', explain: 'Sujeto + Verb TO BE + Complemento.' },
+                { type: 'choice', question: '¿Cómo se responde afirmativamente a: "Are you a student?"', options: ['Yes, I am.', 'Yes, I is.', 'Yes, I are.', 'Yes, I be.'], answer: 'Yes, I am.', explain: 'Yes, I am.' },
+                { type: 'choice', question: '¿Cómo se dice "El perro está en el jardín"?', options: ['The dog is in the garden.', 'The dog am in the garden.', 'The dog are in the garden.', 'The dog be in the garden.'], answer: 'The dog is in the garden.', explain: 'The dog = It (is).' },
+                { type: 'choice', question: '¿Cuál es la forma correcta? "It ___ cold today."', options: ['is', 'are', 'am', 'be'], answer: 'is', explain: 'It is.' }
+            ],
+            articles: [
+                { type: 'choice', question: '¿Cuál es el artículo correcto? "___ apple."', options: ['an', 'a', 'the', 'some'], answer: 'an', explain: 'Usamos "an" antes de vocal.' },
+                { type: 'choice', question: '¿Cuál es el artículo correcto? "___ book."', options: ['a', 'an', 'some', 'the'], answer: 'a', explain: 'Usamos "a" antes de consonante.' },
+                { type: 'tf', sentence: 'Usamos "a" antes de la palabra "dog".', answer: true, explain: '¡Correcto!' },
+                { type: 'tf', sentence: 'Usamos "a" antes de la palabra "orange".', answer: false, explain: 'Incorrecto. Es "an orange".' },
+                { type: 'fill', sentence: 'This is ___ elephant.', options: ['an', 'a'], answer: 'an', explain: 'Inicia con vocal.' },
+                { type: 'fill', sentence: 'I see ___ cat.', options: ['a', 'an'], answer: 'a', explain: 'Inicia con consonante.' },
+                { type: 'order', words: ['It', 'is', 'a', 'red', 'car.'], answer: 'It is a red car.', explain: 'Sujeto + Verbo + Artículo + Adjetivo.' },
+                { type: 'choice', question: '¿Qué opción requiere el artículo "AN"?', options: ['egg', 'car', 'house', 'ball'], answer: 'egg', explain: 'Egg empieza con vocal.' },
+                { type: 'choice', question: '¿Qué opción requiere el artículo "A"?', options: ['desk', 'umbrella', 'ice cream', 'ant'], answer: 'desk', explain: 'Desk empieza con consonante.' },
+                { type: 'choice', question: 'Completa: "She has ___ umbrella."', options: ['an', 'a'], answer: 'an', explain: 'Umbrella empieza con vocal.' }
+            ],
+            structure: [
+                { type: 'order', words: ['I', 'like', 'music.'], answer: 'I like music.', explain: 'Sujeto + Verbo + Objeto.' },
+                { type: 'order', words: ['We', 'play', 'soccer.'], answer: 'We play soccer.', explain: 'Sujeto + Verbo + Objeto.' },
+                { type: 'order', words: ['They', 'read', 'books.'], answer: 'They read books.', explain: 'Sujeto + Verbo + Objeto.' },
+                { type: 'choice', question: '¿Cuál oración está escrita en el orden correcto?', options: ['I eat pizza.', 'Eat I pizza.', 'Pizza eat I.', 'Pizza I eat.'], answer: 'I eat pizza.', explain: 'Sujeto + Verbo + Objeto.' },
+                { type: 'choice', question: '¿Cuál oración está bien estructurada?', options: ['She plays tennis.', 'Plays she tennis.', 'Tennis she plays.', 'Tennis plays she.'], answer: 'She plays tennis.', explain: 'Sujeto + Verbo + Objeto.' },
+                { type: 'tf', sentence: 'En inglés, el sujeto suele ir antes del verbo en oraciones afirmativas.', answer: true, explain: '¡Correcto!' },
+                { type: 'fill', sentence: 'Cats ___ milk.', options: ['drink', 'drinks', 'drinking'], answer: 'drink', explain: 'Plural (Cats) usa drink.' },
+                { type: 'order', words: ['He', 'runs', 'fast.'], answer: 'He runs fast.', explain: 'Sujeto + Verbo + Adverbio.' },
+                { type: 'order', words: ['Mary', 'speaks', 'English.'], answer: 'Mary speaks English.', explain: 'Sujeto + Verbo + Complemento.' },
+                { type: 'choice', question: 'Ordena la frase: "water / drink / I"', options: ['I drink water.', 'Drink I water.', 'Water I drink.', 'Drink water I.'], answer: 'I drink water.', explain: 'Sujeto + Verbo + Objeto.' }
+            ],
+            negative: [
+                { type: 'choice', question: '¿Cómo se dice "Yo no sé"?', options: ["I don't know.", "I not know.", "I doesn't know.", "I am not know."], answer: "I don't know.", explain: 'I don\'t know.' },
+                { type: 'choice', question: '¿Cómo se dice "Ella no corre"?', options: ["She doesn't run.", "She don't run.", "She not run.", "She isn't run."], answer: "She doesn't run.", explain: 'She doesn\'t run.' },
+                { type: 'tf', sentence: 'Para negar con "He" usamos "don\'t".', answer: false, explain: 'Incorrecto. Usamos "doesn\'t".' },
+                { type: 'tf', sentence: 'La oración "I am not tired" es una oración negativa correcta.', answer: true, explain: '¡Correcto!' },
+                { type: 'fill', sentence: 'They ___ like ice cream.', options: ["don't", "doesn't"], answer: "don't", explain: 'They don\'t.' },
+                { type: 'fill', sentence: 'He ___ speak French.', options: ["doesn't", "don't"], answer: "doesn't", explain: 'He doesn\'t.' },
+                { type: 'order', words: ['We', 'do', 'not', 'sleep.'], answer: 'We do not sleep.', explain: 'Sujeto + do not + verbo.' },
+                { type: 'choice', question: 'Completa: "It ___ rain here."', options: ["doesn't", "don't"], answer: "doesn't", explain: 'It doesn\'t.' },
+                { type: 'choice', question: '¿Cuál es la versión negativa de "I play"?', options: ["I don't play.", "I doesn't play.", "I not play.", "I no play."], answer: "I don't play.", explain: 'I don\'t play.' },
+                { type: 'order', words: ['I', 'am', 'not', 'sad.'], answer: 'I am not sad.', explain: 'Sujeto + Verb TO BE + NOT + Adjetivo.' }
+            ]
+        };
+
+        const WORDSEARCH_DATASETS = [
+            { theme: "🐾 Animals", words: ["CAT", "DOG", "BIRD", "FISH", "LION", "DUCK", "BEAR", "FROG", "WOLF", "GOAT"] },
+            { theme: "🏫 Classroom Objects", words: ["BOOK", "DESK", "RULER", "MAP", "PAPER", "CHAIR", "BAG", "PENCIL", "ERASER", "DOOR"] },
+            { theme: "🎨 Colors", words: ["RED", "BLUE", "PINK", "GOLD", "GRAY", "GREEN", "BLACK", "WHITE", "YELLOW", "PURPLE"] },
+            { theme: "👨‍👩‍👧 Family", words: ["MOM", "DAD", "SON", "BABY", "SISTER", "MOTHER", "FATHER", "UNCLE", "AUNT", "COUSIN"] },
+            { theme: "🏃 Daily Actions", words: ["RUN", "EAT", "READ", "SING", "SWIM", "JUMP", "WALK", "TALK", "SLEEP", "WRITE"] }
+        ];
+
+        const CROSSWORD_DATASETS = [
+            {
+                theme: "Crucigrama 1: Verbos & Vocabulario General",
+                grid: [
+                    ['P','L','A','Y','#','#','#','#','#','#'],
+                    ['#','#','#','I','#','#','#','#','#','#'],
+                    ['#','B','O','O','K','#','#','#','#','#'],
+                    ['#','#','#','N','#','#','#','#','#','#'],
+                    ['#','#','#','#','#','C','A','T','#','#'],
+                    ['#','#','#','#','#','#','#','R','#','#'],
+                    ['#','#','#','#','#','#','#','U','#','#'],
+                    ['#','D','O','G','#','#','#','N','#','#'],
+                    ['#','#','#','D','E','S','K','#','#','#'],
+                    ['#','#','#','#','#','L','I','K','E','#']
+                ],
+                cluesAcross: [
+                    { num: 1, text: "Jugar (4 letras)", r: 0, c: 0 },
+                    { num: 3, text: "Libro (4 letras)", r: 2, c: 1 },
+                    { num: 4, text: "Gato (3 letras)", r: 4, c: 5 },
+                    { num: 6, text: "Perro (3 letras)", r: 7, c: 1 },
+                    { num: 7, text: "Escritorio / Banco (4 letras)", r: 8, c: 3 },
+                    { num: 8, text: "Gustar / Gusta (4 letras)", r: 9, c: 5 }
+                ],
+                cluesDown: [
+                    { num: 2, text: "León (4 letras)", r: 0, c: 3 },
+                    { num: 5, text: "Correr (3 letras)", r: 5, c: 7 }
+                ]
+            }
+        ];
+
+        function shuffleArray(array) {
+            let arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        function handleLogin() {
+            const input = document.getElementById('player-name-input');
+            const errorEl = document.getElementById('login-error');
+            const name = input.value.trim();
+
+            if (!name || name.length > 24) {
+                errorEl.classList.remove('hidden');
+                return;
+            }
+            errorEl.classList.add('hidden');
+
+            const storageKey = 'english_adventure_' + name.toLowerCase();
+            const savedData = localStorage.getItem(storageKey);
+
+            if (savedData) {
+                currentPlayer = JSON.parse(savedData);
+                if (!currentPlayer.categoryScores) currentPlayer.categoryScores = {};
+                recalculateTotalScore();
+            } else {
+                currentPlayer = {
+                    name: name,
+                    avatar: AVATARS[Math.floor(Math.random() * AVATARS.length)],
+                    categoryScores: {},
+                    totalScore: 0,
+                    gamesWon: 0
+                };
+                saveProfile();
+            }
+
+            updateTicketUI();
+            document.getElementById('screen-login').classList.add('hidden');
+            document.getElementById('screen-menu').classList.remove('hidden');
+            document.getElementById('player-ticket').classList.remove('hidden');
+        }
+
+        function saveProfile() {
+            if (!currentPlayer.name) return;
+            const storageKey = 'english_adventure_' + currentPlayer.name.toLowerCase();
+            localStorage.setItem(storageKey, JSON.stringify(currentPlayer));
+        }
+
+        function updateTicketUI() {
+            document.getElementById('ticket-name').innerText = currentPlayer.name;
+            document.getElementById('ticket-avatar').innerText = currentPlayer.avatar;
+            document.getElementById('ticket-score').innerText = currentPlayer.totalScore;
+            document.getElementById('ticket-wins').innerText = currentPlayer.gamesWon;
+        }
+
+        function recalculateTotalScore() {
+            let sum = 0;
+            for (let cat in currentPlayer.categoryScores) {
+                sum += currentPlayer.categoryScores[cat];
+            }
+            currentPlayer.totalScore = sum;
+        }
+
+        // FUNCIÓN CLAVE: Registra puntos en vivo y actualiza el ticket en tiempo real
+        function addRealtimePoints(pts) {
+            currentSessionScore += pts;
+            const catKey = activeCategoryKey || 'Especial';
+            const previousBest = currentPlayer.categoryScores[catKey] || 0;
+
+            if (currentSessionScore > previousBest) {
+                currentPlayer.categoryScores[catKey] = currentSessionScore;
+                recalculateTotalScore();
+                saveProfile();
+                updateTicketUI();
+            }
+        }
+
+        function showMenu() {
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-wordsearch').classList.add('hidden');
+            document.getElementById('screen-crossword').classList.add('hidden');
+            document.getElementById('screen-complete').classList.add('hidden');
+            document.getElementById('screen-menu').classList.remove('hidden');
+            updateTicketUI();
+        }
+
+        function quitToMenu() {
+            showMenu();
+        }
+
+        function startCategory(catKey) {
+            activeCategoryKey = catKey;
+            completedThisSession = false;
+            currentSessionScore = 0;
+            currentQuestionIndex = 0;
+
+            let questionsList = [];
+            if (catKey === 'general') {
+                for (let key in QUESTIONS_BANK) {
+                    questionsList = questionsList.concat(QUESTIONS_BANK[key]);
+                }
+                questionsList = shuffleArray(questionsList).slice(0, 12);
+                document.getElementById('game-title').innerText = '🌟 Reto General';
+            } else {
+                questionsList = shuffleArray(QUESTIONS_BANK[catKey]);
+                const titles = {
+                    pronouns: '👤 Personal Pronouns',
+                    plural: '📦 Singular and Plural',
+                    tobe: '⚡ Verb TO BE',
+                    articles: '🍎 Articles A and AN',
+                    structure: '🧩 Sentence Structure',
+                    negative: '🚫 Negative Sentences'
+                };
+                document.getElementById('game-title').innerText = titles[catKey] || 'Categoría';
+            }
+
+            activeQuestions = questionsList;
+            document.getElementById('screen-menu').classList.add('hidden');
+            document.getElementById('screen-game').classList.remove('hidden');
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const container = document.getElementById('exercise-container');
+            const feedbackBox = document.getElementById('feedback-box');
+            const btnNext = document.getElementById('btn-next');
+            
+            feedbackBox.classList.add('hidden');
+            btnNext.classList.add('hidden');
+
+            if (currentQuestionIndex >= activeQuestions.length) {
+                finishGameSession(true);
+                return;
+            }
+
+            document.getElementById('game-progress').innerText = `${currentQuestionIndex + 1} / ${activeQuestions.length}`;
+            const q = activeQuestions[currentQuestionIndex];
+
+            container.innerHTML = '';
+
+            if (q.type === 'choice' || q.type === 'fill') {
+                const shuffledOpts = shuffleArray(q.options);
+                const titleText = q.type === 'choice' ? q.question : 'Completa el espacio en blanco:';
+                const subText = q.type === 'fill' ? `<p class="text-2xl font-extrabold text-yellow-300 tracking-wide mb-3">${q.sentence}</p>` : '';
+                
+                const wrapper = document.createElement('div');
+                wrapper.className = 'space-y-4';
+                wrapper.innerHTML = `<h4 class="text-lg font-bold text-white">${titleText}</h4>${subText}`;
+                
+                const grid = document.createElement('div');
+                grid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-3';
+
+                shuffledOpts.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn bg-slate-700/80 hover:bg-indigo-600 border border-slate-600 p-3.5 rounded-xl font-bold text-left transition btn-bounce text-white';
+                    btn.innerText = opt;
+                    btn.addEventListener('click', () => handleChoiceAnswer(opt, q.answer, q.explain));
+                    grid.appendChild(btn);
+                });
+
+                wrapper.appendChild(grid);
+                container.appendChild(wrapper);
+
+            } else if (q.type === 'tf') {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'space-y-6 text-center';
+                wrapper.innerHTML = `<h4 class="text-xl font-bold text-white">${q.sentence}</h4>`;
+
+                const btnGroup = document.createElement('div');
+                btnGroup.className = 'flex justify-center gap-4';
+
+                const btnTrue = document.createElement('button');
+                btnTrue.className = 'tf-btn bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8 py-3 rounded-xl shadow-lg btn-bounce';
+                btnTrue.innerText = 'TRUE 👍';
+                btnTrue.addEventListener('click', () => handleTfAnswer(true, q.answer, q.explain));
+
+                const btnFalse = document.createElement('button');
+                btnFalse.className = 'tf-btn bg-rose-600 hover:bg-rose-500 text-white font-bold px-8 py-3 rounded-xl shadow-lg btn-bounce';
+                btnFalse.innerText = 'FALSE 👎';
+                btnFalse.addEventListener('click', () => handleTfAnswer(false, q.answer, q.explain));
+
+                btnGroup.appendChild(btnTrue);
+                btnGroup.appendChild(btnFalse);
+                wrapper.appendChild(btnGroup);
+                container.appendChild(wrapper);
+
+            } else if (q.type === 'order') {
+                window.currentOrderWords = shuffleArray(q.words);
+                window.selectedOrderWords = [];
+                window.targetOrderAnswer = q.answer;
+                window.currentOrderExplain = q.explain;
+                renderOrderUI();
+            }
+        }
+
+        function handleChoiceAnswer(selected, correct, explain) {
+            const buttons = document.querySelectorAll('#exercise-container button');
+            buttons.forEach(b => b.disabled = true);
+
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.classList.remove('hidden');
+
+            if (selected === correct) {
+                addRealtimePoints(10); // Actualización en vivo
+                feedbackBox.className = 'p-4 rounded-xl text-center font-bold text-sm bg-emerald-500/20 border border-emerald-500 text-emerald-300';
+                feedbackBox.innerHTML = `¡Correcto! (+10 pts) <br><span class="text-xs text-slate-300">${explain}</span>`;
+            } else {
+                feedbackBox.className = 'p-4 rounded-xl text-center font-bold text-sm bg-rose-500/20 border border-rose-500 text-rose-300';
+                feedbackBox.innerHTML = `Incorrecto. La respuesta era: <strong>${correct}</strong> <br><span class="text-xs text-slate-300">${explain}</span>`;
+            }
+
+            document.getElementById('btn-next').classList.remove('hidden');
+        }
+
+        function handleTfAnswer(selected, correct, explain) {
+            const buttons = document.querySelectorAll('.tf-btn');
+            buttons.forEach(b => b.disabled = true);
+
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.classList.remove('hidden');
+
+            if (selected === correct) {
+                addRealtimePoints(10); // Actualización en vivo
+                feedbackBox.className = 'p-4 rounded-xl text-center font-bold text-sm bg-emerald-500/20 border border-emerald-500 text-emerald-300';
+                feedbackBox.innerHTML = `¡Correcto! (+10 pts) <br><span class="text-xs text-slate-300">${explain}</span>`;
+            } else {
+                feedbackBox.className = 'p-4 rounded-xl text-center font-bold text-sm bg-rose-500/20 border border-rose-500 text-rose-300';
+                feedbackBox.innerHTML = `Incorrecto. <br><span class="text-xs text-slate-300">${explain}</span>`;
+            }
+
+            document.getElementById('btn-next').classList.remove('hidden');
+        }
+
+        function renderOrderUI() {
+            const container = document.getElementById('exercise-container');
+            container.innerHTML = '';
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'space-y-4';
+            
+            const title = document.createElement('h4');
+            title.className = 'text-lg font-bold text-white';
+            title.innerText = 'Ordena las palabras para formar la oración correcta:';
+            wrapper.appendChild(title);
+
+            const targetDiv = document.createElement('div');
+            targetDiv.className = 'min-h-[50px] bg-slate-900 border-2 border-slate-700 rounded-xl p-3 flex flex-wrap gap-2 items-center';
+            
+            if (window.selectedOrderWords.length === 0) {
+                targetDiv.innerHTML = '<span class="text-slate-500 text-sm">Toca las palabras abajo en orden...</span>';
+            } else {
+                window.selectedOrderWords.forEach((w, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'bg-indigo-600 text-white px-3 py-1.5 rounded-lg font-bold text-sm btn-bounce';
+                    btn.innerText = `${w} ✕`;
+                    btn.addEventListener('click', () => removeFromOrder(idx));
+                    targetDiv.appendChild(btn);
+                });
+            }
+            wrapper.appendChild(targetDiv);
+
+            const sourceDiv = document.createElement('div');
+            sourceDiv.className = 'flex flex-wrap gap-2 pt-2';
+            
+            window.currentOrderWords.forEach((w, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'bg-slate-700 hover:bg-slate-600 text-white px-3.5 py-2 rounded-xl font-bold text-sm btn-bounce';
+                btn.innerText = w;
+                btn.addEventListener('click', () => addToOrder(idx, w));
+                sourceDiv.appendChild(btn);
+            });
+            wrapper.appendChild(sourceDiv);
+
+            const checkBtn = document.createElement('button');
+            checkBtn.className = 'w-full mt-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2.5 rounded-xl btn-bounce';
+            checkBtn.innerText = 'Comprobar oración ✔️';
+            checkBtn.addEventListener('click', checkOrderAnswer);
+            wrapper.appendChild(checkBtn);
+
+            container.appendChild(wrapper);
+        }
+
+        function addToOrder(idx, word) {
+            window.selectedOrderWords.push(word);
+            renderOrderUI();
+        }
+
+        function removeFromOrder(idx) {
+            window.selectedOrderWords.splice(idx, 1);
+            renderOrderUI();
+        }
+
+        function checkOrderAnswer() {
+            const sentenceBuilt = window.selectedOrderWords.join(' ');
+            const feedbackBox = document.getElementById('feedback-box');
+            feedbackBox.classList.remove('hidden');
+
+            const buttons = document.querySelectorAll('#exercise-container button');
+            buttons.forEach(b => b.disabled = true);
+
+            if (sentenceBuilt === window.targetOrderAnswer) {
+                addRealtimePoints(10); // Actualización en vivo
+                feedbackBox.className = 'p-4 rounded-xl text-center font-bold text-sm bg-emerald-500/20 border border-emerald-500 text-emerald-300';
+                feedbackBox.innerHTML = `¡Excelente! Oración correcta (+10 pts) <br><span class="text-xs text-slate-300">${window.currentOrderExplain}</span>`;
+            } else {
+                feedbackBox.className = 'p-4 rounded-xl text-center font-bold text-sm bg-rose-500/20 border border-rose-500 text-rose-300';
+                feedbackBox.innerHTML = `Incorrecto. La oración era: <strong>${window.targetOrderAnswer}</strong>`;
+            }
+
+            document.getElementById('btn-next').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentQuestionIndex++;
+            renderQuestion();
+        }
+
+        // --- SOPA DE LETRAS ---
+        let wsData = { words: [], foundWords: new Set(), grid: [], size: 10 };
+        let isSelectingWS = false;
+        let selectedWSCells = [];
+
+        function startWordSearch() {
+            completedThisSession = false;
+            currentSessionScore = 0;
+            activeCategoryKey = '';
+            
+            const dataset = WORDSEARCH_DATASETS[Math.floor(Math.random() * WORDSEARCH_DATASETS.length)];
+            document.getElementById('ws-theme-title').innerText = `🔎 Sopa de Letras: ${dataset.theme}`;
+
+            wsData.words = dataset.words;
+            wsData.foundWords.clear();
+            wsData.size = 10;
+            wsData.grid = Array(10).fill(null).map(() => Array(10).fill(''));
+
+            wsData.words.forEach(word => {
+                let placed = false;
+                let attempts = 0;
+                while (!placed && attempts < 100) {
+                    attempts++;
+                    const horizontal = Math.random() < 0.5;
+                    const r = Math.floor(Math.random() * wsData.size);
+                    const c = Math.floor(Math.random() * wsData.size);
+
+                    if (horizontal && c + word.length <= wsData.size) {
+                        let canFit = true;
+                        for (let i = 0; i < word.length; i++) {
+                            if (wsData.grid[r][c + i] !== '' && wsData.grid[r][c + i] !== word[i]) {
+                                canFit = false;
+                                break;
+                            }
+                        }
+                        if (canFit) {
+                            for (let i = 0; i < word.length; i++) wsData.grid[r][c + i] = word[i];
+                            placed = true;
+                        }
+                    } else if (!horizontal && r + word.length <= wsData.size) {
+                        let canFit = true;
+                        for (let i = 0; i < word.length; i++) {
+                            if (wsData.grid[r + i][c] !== '' && wsData.grid[r + i][c] !== word[i]) {
+                                canFit = false;
+                                break;
+                            }
+                        }
+                        if (canFit) {
+                            for (let i = 0; i < word.length; i++) wsData.grid[r + i][c] = word[i];
+                            placed = true;
+                        }
+                    }
+                }
+            });
+
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            for (let r = 0; r < wsData.size; r++) {
+                for (let c = 0; c < wsData.size; c++) {
+                    if (wsData.grid[r][c] === '') {
+                        wsData.grid[r][c] = letters[Math.floor(Math.random() * letters.length)];
+                    }
+                }
+            }
+
+            renderWordSearchUI();
+            document.getElementById('screen-menu').classList.add('hidden');
+            document.getElementById('screen-wordsearch').classList.remove('hidden');
+        }
+
+        function renderWordSearchUI() {
+            const gridEl = document.getElementById('ws-grid');
+            gridEl.innerHTML = '';
+
+            for (let r = 0; r < wsData.size; r++) {
+                for (let c = 0; c < wsData.size; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'ws-cell';
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    cell.innerText = wsData.grid[r][c];
+
+                    cell.addEventListener('pointerdown', (e) => {
+                        isSelectingWS = true;
+                        selectedWSCells = [{r, c}];
+                        highlightWS();
+                    });
+
+                    cell.addEventListener('pointerenter', (e) => {
+                        if (isSelectingWS) {
+                            if (!selectedWSCells.some(cell => cell.r === r && cell.c === c)) {
+                                selectedWSCells.push({r, c});
+                                highlightWS();
+                            }
+                        }
+                    });
+
+                    gridEl.appendChild(cell);
+                }
+            }
+
+            window.onpointerup = () => {
+                if (!isSelectingWS) return;
+                isSelectingWS = false;
+
+                const wordStr = selectedWSCells.map(cell => wsData.grid[cell.r][cell.c]).join('');
+                const revWordStr = [...selectedWSCells].reverse().map(cell => wsData.grid[cell.r][cell.c]).join('');
+
+                let matched = null;
+                if (wsData.words.includes(wordStr) && !wsData.foundWords.has(wordStr)) matched = wordStr;
+                else if (wsData.words.includes(revWordStr) && !wsData.foundWords.has(revWordStr)) matched = revWordStr;
+
+                if (matched) {
+                    wsData.foundWords.add(matched);
+                    addRealtimePoints(15); // Actualización en vivo
+                    selectedWSCells.forEach(cell => {
+                        const el = document.querySelector(`.ws-cell[data-row="${cell.r}"][data-col="${cell.c}"]`);
+                        if (el) el.classList.add('found');
+                    });
+                    if (wsData.foundWords.size === wsData.words.length) {
+                        finishGameSession(true);
+                    }
+                } else {
+                    document.querySelectorAll('.ws-cell').forEach(el => {
+                        if (!el.classList.contains('found')) el.classList.remove('selecting');
+                    });
+                }
+                selectedWSCells = [];
+                document.getElementById('ws-counter').innerText = `Palabras: ${wsData.foundWords.size} / ${wsData.words.length}`;
+                document.getElementById('ws-words-list').innerHTML = wsData.words.map(w => `
+                    <li class="${wsData.foundWords.has(w) ? 'line-through text-emerald-400' : 'text-slate-400'}">${w}</li>
+                `).join('');
+            };
+
+            document.getElementById('ws-words-list').innerHTML = wsData.words.map(w => `
+                <li class="${wsData.foundWords.has(w) ? 'line-through text-emerald-400' : 'text-slate-400'}">${w}</li>
+            `).join('');
+            document.getElementById('ws-counter').innerText = `Palabras: ${wsData.foundWords.size} / ${wsData.words.length}`;
+        }
+
+        function highlightWS() {
+            document.querySelectorAll('.ws-cell').forEach(el => {
+                const r = parseInt(el.dataset.row);
+                const c = parseInt(el.dataset.col);
+                if (selectedWSCells.some(cell => cell.r === r && cell.c === c)) {
+                    el.classList.add('selecting');
+                } else if (!el.classList.contains('found')) {
+                    el.classList.remove('selecting');
+                }
+            });
+        }
+
+        // --- CRUCIGRAMA ---
+        let currentCrosswordDataset = null;
+
+        function startCrossword() {
+            completedThisSession = false;
+            currentSessionScore = 0;
+            activeCategoryKey = '';
+
+            currentCrosswordDataset = CROSSWORD_DATASETS[0];
+            document.getElementById('cw-theme-title').innerText = `✏️ ${currentCrosswordDataset.theme}`;
+
+            const boardEl = document.getElementById('cw-board');
+            const size = 10;
+            boardEl.style.gridTemplateColumns = `repeat(${size}, minmax(0, 1fr))`;
+            boardEl.innerHTML = '';
+
+            for (let r = 0; r < size; r++) {
+                for (let c = 0; c < size; c++) {
+                    const cellData = currentCrosswordDataset.grid[r][c];
+                    const cellDiv = document.createElement('div');
+
+                    if (cellData === '#') {
+                        cellDiv.className = 'crossword-cell black';
+                    } else {
+                        cellDiv.className = 'crossword-cell white';
+                        
+                        let clueNum = null;
+                        const acrossMatch = currentCrosswordDataset.cluesAcross.find(cl => cl.r === r && cl.c === c);
+                        const downMatch = currentCrosswordDataset.cluesDown.find(cl => cl.r === r && cl.c === c);
+                        if (acrossMatch) clueNum = acrossMatch.num;
+                        else if (downMatch) clueNum = downMatch.num;
+
+                        let numHtml = clueNum ? `<span class="num">${clueNum}</span>` : '';
+                        cellDiv.innerHTML = `
+                            ${numHtml}
+                            <input type="text" maxlength="1" data-row="${r}" data-col="${c}" data-answer="${cellData}" oninput="handleCrosswordInput(this)">
+                        `;
+                    }
+                    boardEl.appendChild(cellDiv);
+                }
+            }
+
+            document.getElementById('cw-across-clues').innerHTML = currentCrosswordDataset.cluesAcross.map(cl => `
+                <li><strong>${cl.num}.</strong> ${cl.text}</li>
+            `).join('');
+
+            document.getElementById('cw-down-clues').innerHTML = currentCrosswordDataset.cluesDown.map(cl => `
+                <li><strong>${cl.num}.</strong> ${cl.text}</li>
+            `).join('');
+
+            document.getElementById('screen-menu').classList.add('hidden');
+            document.getElementById('screen-crossword').classList.remove('hidden');
+        }
+
+        function handleCrosswordInput(input) {
+            input.value = input.value.toUpperCase();
+            if (input.value && input.parentElement) {
+                const nextInput = document.querySelector(`input[data-row="${input.dataset.row}"][data-col="${parseInt(input.dataset.col) + 1}"]`);
+                if (nextInput) nextInput.focus();
+            }
+        }
+
+        function checkCrossword() {
+            const inputs = document.querySelectorAll('#cw-board input');
+            let allCorrect = true;
+            let correctCount = 0;
+
+            inputs.forEach(input => {
+                const parent = input.parentElement;
+                parent.classList.remove('correct-cell', 'wrong-cell');
+                if (input.value === input.dataset.answer) {
+                    parent.classList.add('correct-cell');
+                    correctCount++;
+                } else {
+                    parent.classList.add('wrong-cell');
+                    allCorrect = false;
+                }
+            });
+
+            const pointsEarned = correctCount * 5;
+            addRealtimePoints(pointsEarned); // Actualización en vivo
+
+            if (allCorrect) {
+                finishGameSession(true);
+            } else {
+                alert(`Respuestas correctas: ${correctCount} de ${inputs.length}. Puntos registrados en tu ticket. ¡Sigue intentando!`);
+            }
+        }
+
+        function finishGameSession(isVictory) {
+            if (completedThisSession) return;
+            completedThisSession = true;
+
+            let challengeName = document.getElementById('game-title').innerText;
+            if (document.getElementById('screen-wordsearch').classList.contains('hidden') === false) {
+                challengeName = document.getElementById('ws-theme-title').innerText;
+            } else if (document.getElementById('screen-crossword').classList.contains('hidden') === false) {
+                challengeName = document.getElementById('cw-theme-title').innerText;
+            }
+
+            if (isVictory) {
+                currentPlayer.gamesWon += 1;
+            }
+
+            saveProfile();
+
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-wordsearch').classList.add('hidden');
+            document.getElementById('screen-crossword').classList.add('hidden');
+            document.getElementById('screen-complete').classList.remove('hidden');
+
+            document.getElementById('complete-challenge-name').innerText = challengeName;
+            document.getElementById('complete-session-score').innerText = currentSessionScore;
+            updateTicketUI();
+        }
+    </script>
+</body>
+</html>
